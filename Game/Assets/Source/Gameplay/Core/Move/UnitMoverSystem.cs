@@ -1,6 +1,7 @@
 ﻿using Unity.Burst;
 using Unity.Entities;
 using Unity.Mathematics;
+using Unity.Physics;
 using Unity.Transforms;
 
 namespace Gameplay.Core
@@ -15,17 +16,22 @@ namespace Gameplay.Core
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            float deltaTime = SystemAPI.Time.DeltaTime;
-
             foreach (var (localTransform,
-                         moveSpeed)
+                         moveSpeed,
+                         physicsVelocity)
                      in SystemAPI.Query<
                          RefRW<LocalTransform>,
-                         RefRO<MoveSpeed>>())
+                         RefRO<MoveSpeed>,
+                         RefRW<PhysicsVelocity>>())
             {
-                localTransform.ValueRW.Position =
-                    localTransform.ValueRO.Position +
-                    new float3(moveSpeed.ValueRO.Value, 0.0f, 0.0f) * deltaTime;
+                float3 targetPosition = localTransform.ValueRO.Position + new float3(10.0f, 0.0f, 0.0f);
+                float3 moveDirection = targetPosition - localTransform.ValueRO.Position;
+                moveDirection = math.normalize(moveDirection);
+                
+                localTransform.ValueRW.Rotation = quaternion.LookRotation(moveDirection, math.up());
+
+                physicsVelocity.ValueRW.Linear = moveDirection * moveSpeed.ValueRO.Value;
+                physicsVelocity.ValueRW.Angular = float3.zero;
             }
         }
 
