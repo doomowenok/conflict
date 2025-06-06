@@ -1,4 +1,5 @@
 ﻿using Unity.Entities;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Gameplay.Core
@@ -17,7 +18,8 @@ namespace Gameplay.Core
                 {
                     MoveSpeed = authoring.MoveSpeed,
                     RotationSpeed = authoring.RotationSpeed,
-                    TargetPosition = authoring.transform.position
+                    TargetPosition = new float3(1.0f, 1.0f, 1.0f),
+                    ReachTarget = true
                 });
             }
         }

@@ -18,29 +18,33 @@ namespace Gameplay.Core
         {
             float deltaTime = SystemAPI.Time.DeltaTime;
 
-            foreach (var input in SystemAPI.Query<RefRO<InputWorldPosition>>())
+            foreach (var (transform,
+                         unit,
+                         rigidbody)
+                     in SystemAPI.Query<
+                         RefRW<LocalTransform>,
+                         RefRO<UnitMoveComponent>,
+                         RefRW<PhysicsVelocity>>())
             {
-                foreach (var (localTransform,
-                             unitMover,
-                             physicsVelocity)
-                         in SystemAPI.Query<
-                             RefRW<LocalTransform>,
-                             RefRO<UnitMoveComponent>,
-                             RefRW<PhysicsVelocity>>())
+                if (unit.ValueRO.ReachTarget)
                 {
-                    float3 currentPosition = localTransform.ValueRO.Position;
-                    float3 targetPosition = input.ValueRO.MouseWorldPosition;
-                    float3 moveDirection = targetPosition - currentPosition;
-                    moveDirection = math.normalize(moveDirection);
+                    rigidbody.ValueRW.Linear = float3.zero;
+                    rigidbody.ValueRW.Angular = float3.zero;
+                    continue;
+                }
+                    
+                float3 currentPosition = transform.ValueRO.Position;
+                    
+                float3 moveDirection = unit.ValueRO.TargetPosition - currentPosition;
+                moveDirection = math.normalize(moveDirection);
 
-                    var currentRotation = localTransform.ValueRO.Rotation;
-                    var nextRotation = quaternion.LookRotation(moveDirection, math.up());
-                    localTransform.ValueRW.Rotation = math.slerp(currentRotation, nextRotation, deltaTime * unitMover.ValueRO.RotationSpeed);
+                var currentRotation = transform.ValueRO.Rotation;
+                var nextRotation = quaternion.LookRotation(moveDirection, math.up());
+                transform.ValueRW.Rotation = math.slerp(currentRotation, nextRotation, deltaTime * unit.ValueRO.RotationSpeed);
 
-                    physicsVelocity.ValueRW.Linear = moveDirection * unitMover.ValueRO.MoveSpeed;
-                    physicsVelocity.ValueRW.Angular = float3.zero;
-                }   
-            }
+                rigidbody.ValueRW.Linear = moveDirection * unit.ValueRO.MoveSpeed;
+                rigidbody.ValueRW.Angular = float3.zero;
+            }   
         }
 
         [BurstCompile]

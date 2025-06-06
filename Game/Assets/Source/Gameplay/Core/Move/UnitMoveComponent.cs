@@ -8,5 +8,6 @@ namespace Gameplay.Core
         public float MoveSpeed;
         public float RotationSpeed;
         public float3 TargetPosition;
+        public bool ReachTarget;
     }
 }
