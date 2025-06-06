@@ -3,6 +3,7 @@ using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Physics;
 using Unity.Transforms;
+using UnityEngine;
 
 namespace Gameplay.Core
 {
@@ -13,9 +14,12 @@ namespace Gameplay.Core
         {
         }
 
-        [BurstCompile]
+        // [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
+            Vector3 mousePosition = MouseWorldPosition.Instance.GetPosition();
+            float deltaTime = SystemAPI.Time.DeltaTime;
+
             foreach (var (localTransform,
                          moveSpeed,
                          physicsVelocity)
@@ -24,11 +28,13 @@ namespace Gameplay.Core
                          RefRO<MoveSpeed>,
                          RefRW<PhysicsVelocity>>())
             {
-                float3 targetPosition = localTransform.ValueRO.Position + new float3(10.0f, 0.0f, 0.0f);
+                float3 targetPosition = mousePosition;
                 float3 moveDirection = targetPosition - localTransform.ValueRO.Position;
                 moveDirection = math.normalize(moveDirection);
-                
-                localTransform.ValueRW.Rotation = quaternion.LookRotation(moveDirection, math.up());
+
+                var currentRotation = localTransform.ValueRO.Rotation;
+                var nextRotation = quaternion.LookRotation(moveDirection, math.up());
+                localTransform.ValueRW.Rotation = math.slerp(currentRotation, nextRotation, deltaTime * 10);
 
                 physicsVelocity.ValueRW.Linear = moveDirection * moveSpeed.ValueRO.Value;
                 physicsVelocity.ValueRW.Angular = float3.zero;
